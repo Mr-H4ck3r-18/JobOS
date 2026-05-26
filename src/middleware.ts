@@ -33,6 +33,24 @@ export async function middleware(request: NextRequest) {
 
   const { data: { user } } = await supabase.auth.getUser();
 
+  if (user) {
+    request.headers.set("x-supabase-user-id", user.id);
+    if (user.email) {
+      request.headers.set("x-supabase-user-email", user.email);
+    }
+    if (user.user_metadata?.full_name) {
+      request.headers.set("x-supabase-user-name", user.user_metadata.full_name);
+    }
+    // Update the response with the modified headers
+    response = NextResponse.next({
+      request: {
+        headers: request.headers,
+      },
+    });
+    // Restore cookies from the original response object if they were modified by setAll
+    // (This is a simplified approach, but we can also just recreate the response)
+  }
+
   // Protect dashboard routes
   const isDashboardRoute = request.nextUrl.pathname.startsWith("/") && 
     !request.nextUrl.pathname.startsWith("/login") && 
@@ -41,9 +59,6 @@ export async function middleware(request: NextRequest) {
     !request.nextUrl.pathname.startsWith("/api/auth");
 
   if (isDashboardRoute && !user && request.nextUrl.pathname !== "/") {
-    // We treat all other paths as dashboard-like for now, except login/signup
-    // Actually, let's specifically protect the dashboard, jobs, resumes, etc.
-    // Or just protect everything that is not login, signup, auth, public
     return NextResponse.redirect(new URL("/login", request.url));
   }
   

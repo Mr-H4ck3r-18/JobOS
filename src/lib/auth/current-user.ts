@@ -1,8 +1,8 @@
 import "server-only";
 
 import { cache } from "react";
+import { headers } from "next/headers";
 import { prisma } from "@/lib/prisma";
-import { createServerSupabaseClient } from "@/lib/supabase/server";
 
 export type CurrentAppUser =
   | {
@@ -20,29 +20,21 @@ export type CurrentAppUser =
     };
 
 export const getCurrentAppUser = cache(async (): Promise<CurrentAppUser> => {
-  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
-    return {
-      ok: false,
-      reason: "missing-env",
-      message: "Supabase environment variables are not configured yet.",
-    };
-  }
+  const headerStore = await headers();
+  const authUserId = headerStore.get("x-supabase-user-id");
+  const authEmail = headerStore.get("x-supabase-user-email");
+  const authFullName = headerStore.get("x-supabase-user-name");
 
-  const supabase = await createServerSupabaseClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user?.email) {
+  if (!authUserId || !authEmail) {
     return {
       ok: false,
       reason: "unauthenticated",
-      message: "Sign in with Supabase Auth to manage resumes.",
+      message: "Sign in to access this page.",
     };
   }
 
   let appUser = await prisma.user.findUnique({
-    where: { authUserId: user.id },
+    where: { authUserId: authUserId },
     select: {
       id: true,
       authUserId: true,
@@ -53,9 +45,9 @@ export const getCurrentAppUser = cache(async (): Promise<CurrentAppUser> => {
   if (!appUser) {
     appUser = await prisma.user.create({
       data: {
-        authUserId: user.id,
-        email: user.email,
-        fullName: user.user_metadata?.full_name ?? null,
+        authUserId: authUserId,
+        email: authEmail,
+        fullName: authFullName ?? null,
       },
       select: {
         id: true,
@@ -63,11 +55,11 @@ export const getCurrentAppUser = cache(async (): Promise<CurrentAppUser> => {
         email: true,
       },
     });
-  } else if (appUser.email !== user.email) {
+  } else if (appUser.email !== authEmail) {
     // Only update if email changed
     appUser = await prisma.user.update({
-      where: { authUserId: user.id },
-      data: { email: user.email },
+      where: { authUserId: authUserId },
+      data: { email: authEmail },
       select: {
         id: true,
         authUserId: true,
