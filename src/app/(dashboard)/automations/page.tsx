@@ -1,7 +1,8 @@
+import { Suspense } from "react";
 import { Metadata } from "next";
 import { getCurrentAppUser } from "@/lib/auth/current-user";
-import { prisma } from "@/lib/prisma";
-import { AutomationsTable } from "@/features/automations/components/automations-table";
+import { AutomationsContent } from "./automations-content";
+import { TableSkeleton } from "@/components/ui/table-skeleton";
 
 export const metadata: Metadata = {
   title: "Automations | JobOS",
@@ -12,12 +13,6 @@ export default async function AutomationsPage() {
   const currentUser = await getCurrentAppUser();
   if (!currentUser.ok) return null;
 
-  const runs = await prisma.automationRun.findMany({
-    where: { userId: currentUser.user.id },
-    orderBy: { createdAt: "desc" },
-    take: 50,
-  });
-
   return (
     <div className="flex flex-col gap-6 w-full max-w-7xl mx-auto">
       <div>
@@ -25,7 +20,9 @@ export default async function AutomationsPage() {
         <p className="text-muted-foreground mt-1">Review ingestion logs and background jobs.</p>
       </div>
 
-      <AutomationsTable runs={runs} />
+      <Suspense fallback={<TableSkeleton rows={5} />}>
+        <AutomationsContent userId={currentUser.user.id} />
+      </Suspense>
     </div>
   );
 }

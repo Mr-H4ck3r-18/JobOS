@@ -35,7 +35,10 @@ export async function getDashboardMetrics(userId: string) {
     // Top matches
     prisma.jobMatch.findMany({
       where: { userId },
-      include: {
+      select: {
+        id: true,
+        jobId: true,
+        score: true,
         job: {
           select: { id: true, title: true, company: true },
         },

@@ -11,7 +11,17 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { updateJobStatusAction } from "../actions";
 
-type JobWithMatch = Job & { matches?: { score: number }[] };
+type JobWithMatch = Partial<Job> & { 
+  id: string;
+  title: string;
+  company: string;
+  location: string | null;
+  status: JobStatus;
+  source: string;
+  postedAt: Date | null;
+  url: string;
+  matches?: { score: number }[] 
+};
 
 interface JobsTableProps {
   jobs: JobWithMatch[];

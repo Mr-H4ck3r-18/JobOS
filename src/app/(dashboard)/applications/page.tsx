@@ -1,7 +1,8 @@
+import { Suspense } from "react";
 import { Metadata } from "next";
 import { getCurrentAppUser } from "@/lib/auth/current-user";
-import { prisma } from "@/lib/prisma";
-import { ApplicationsTable } from "@/features/applications/components/applications-table";
+import { ApplicationsContent } from "./applications-content";
+import { TableSkeleton } from "@/components/ui/table-skeleton";
 
 export const metadata: Metadata = {
   title: "Applications | JobOS",
@@ -12,16 +13,6 @@ export default async function ApplicationsPage() {
   const currentUser = await getCurrentAppUser();
   if (!currentUser.ok) return null;
 
-  const applications = await prisma.application.findMany({
-    where: { userId: currentUser.user.id },
-    include: {
-      job: {
-        select: { id: true, title: true, company: true },
-      },
-    },
-    orderBy: { updatedAt: "desc" },
-  });
-
   return (
     <div className="flex flex-col gap-6 w-full max-w-7xl mx-auto">
       <div>
@@ -29,7 +20,9 @@ export default async function ApplicationsPage() {
         <p className="text-muted-foreground mt-1">Track drafts, reviews, submissions, and interviews.</p>
       </div>
 
-      <ApplicationsTable applications={applications} />
+      <Suspense fallback={<TableSkeleton rows={5} />}>
+        <ApplicationsContent userId={currentUser.user.id} />
+      </Suspense>
     </div>
   );
 }

@@ -54,7 +54,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen pb-20 lg:pb-0">
       <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 border-r border-border/70 bg-background/82 px-3 py-4 backdrop-blur-xl lg:block">
-        <Link href="/dashboard" className="mb-6 flex items-center gap-3 px-2">
+        <Link href="/dashboard" className="mb-6 flex items-center gap-3 px-2 transition-opacity hover:opacity-80">
           <span className="flex h-9 w-9 items-center justify-center rounded-md bg-primary text-primary-foreground shadow-soft-glow">
             <Sparkles className="h-4 w-4" />
           </span>
@@ -89,9 +89,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
         <motion.div
           key={pathname}
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+          initial={{ opacity: 0, y: 4, filter: "blur(4px)" }}
+          animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+          transition={{ type: "spring", stiffness: 260, damping: 24, mass: 0.9 }}
           className="px-4 py-6 md:px-6 xl:px-8"
         >
           {children}
