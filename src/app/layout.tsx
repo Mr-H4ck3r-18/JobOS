@@ -17,6 +17,8 @@ export const metadata: Metadata = {
   description: "A low-cost career operating system for job discovery, matching, and application tracking.",
 };
 
+export const preferredRegion = "auto";
+
 export default function RootLayout({
   children,
 }: Readonly<{
