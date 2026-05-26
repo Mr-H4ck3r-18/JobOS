@@ -1,28 +1,32 @@
 import { Suspense } from "react";
 import { Metadata } from "next";
-import { getCurrentAppUser } from "@/lib/auth/current-user";
 import { AutomationsContent } from "./automations-content";
 import { TableSkeleton } from "@/components/ui/table-skeleton";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export const metadata: Metadata = {
   title: "Automations | JobOS",
-  description: "View your job ingestion runs and automation histories.",
+  description: "Monitor background ingestion and matching tasks.",
 };
 
-export default async function AutomationsPage() {
-  const currentUser = await getCurrentAppUser();
-  if (!currentUser.ok) return null;
-
+export default function AutomationsPage() {
   return (
     <div className="flex flex-col gap-6 w-full max-w-7xl mx-auto">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Automation Runs</h1>
-        <p className="text-muted-foreground mt-1">Review ingestion logs and background jobs.</p>
+        <h1 className="text-3xl font-bold tracking-tight">Automations</h1>
+        <p className="text-muted-foreground mt-1">Monitor background ingestion and matching tasks.</p>
       </div>
 
-      <Suspense fallback={<TableSkeleton rows={5} />}>
-        <AutomationsContent userId={currentUser.user.id} />
-      </Suspense>
+      <Card className="border-border/50 bg-background/60 shadow-xl backdrop-blur-xl">
+        <CardHeader className="pb-4">
+          <CardTitle className="text-lg">Recent Runs</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Suspense fallback={<TableSkeleton rows={8} />}>
+            <AutomationsContent />
+          </Suspense>
+        </CardContent>
+      </Card>
     </div>
   );
 }

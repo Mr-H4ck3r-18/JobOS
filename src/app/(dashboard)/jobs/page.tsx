@@ -1,6 +1,5 @@
 import { Suspense } from "react";
 import { Metadata } from "next";
-import { getCurrentAppUser } from "@/lib/auth/current-user";
 import { JobIngestionTrigger } from "@/features/jobs/components/job-ingestion-trigger";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { JobsContent } from "./jobs-content";
@@ -15,10 +14,7 @@ interface JobsPageProps {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }
 
-export default async function JobsPage({ searchParams }: JobsPageProps) {
-  const currentUser = await getCurrentAppUser();
-  if (!currentUser.ok) return null; // Handled by middleware
-
+export default function JobsPage({ searchParams }: JobsPageProps) {
   return (
     <div className="flex flex-col gap-6 w-full max-w-7xl mx-auto">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -35,7 +31,7 @@ export default async function JobsPage({ searchParams }: JobsPageProps) {
         </CardHeader>
         <CardContent>
           <Suspense fallback={<TableSkeleton rows={10} />}>
-            <JobsContent userId={currentUser.user.id} searchParams={searchParams} />
+            <JobsContent searchParamsPromise={searchParams} />
           </Suspense>
         </CardContent>
       </Card>

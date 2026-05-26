@@ -9,7 +9,14 @@ import { StatusPipeline } from "@/components/dashboard/status-pipeline";
 import { getDashboardMetrics } from "@/features/dashboard/service";
 import { StaggeredGrid } from "@/components/ui/staggered-grid";
 
-export async function DashboardContent({ userId }: { userId: string }) {
+import { getCurrentAppUser } from "@/lib/auth/current-user";
+import { redirect } from "next/navigation";
+
+export async function DashboardContent() {
+  const currentUser = await getCurrentAppUser();
+  if (!currentUser.ok) redirect("/login");
+  const userId = currentUser.user.id;
+
   const data = await getDashboardMetrics(userId);
 
   const metrics = [

@@ -1,5 +1,6 @@
 import "server-only";
 
+import { cache } from "react";
 import { prisma } from "@/lib/prisma";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 
@@ -18,7 +19,7 @@ export type CurrentAppUser =
       message: string;
     };
 
-export async function getCurrentAppUser(): Promise<CurrentAppUser> {
+export const getCurrentAppUser = cache(async (): Promise<CurrentAppUser> => {
   if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
     return {
       ok: false,
@@ -40,14 +41,8 @@ export async function getCurrentAppUser(): Promise<CurrentAppUser> {
     };
   }
 
-  const appUser = await prisma.user.upsert({
+  let appUser = await prisma.user.findUnique({
     where: { authUserId: user.id },
-    update: { email: user.email },
-    create: {
-      authUserId: user.id,
-      email: user.email,
-      fullName: user.user_metadata?.full_name ?? null,
-    },
     select: {
       id: true,
       authUserId: true,
@@ -55,8 +50,34 @@ export async function getCurrentAppUser(): Promise<CurrentAppUser> {
     },
   });
 
+  if (!appUser) {
+    appUser = await prisma.user.create({
+      data: {
+        authUserId: user.id,
+        email: user.email,
+        fullName: user.user_metadata?.full_name ?? null,
+      },
+      select: {
+        id: true,
+        authUserId: true,
+        email: true,
+      },
+    });
+  } else if (appUser.email !== user.email) {
+    // Only update if email changed
+    appUser = await prisma.user.update({
+      where: { authUserId: user.id },
+      data: { email: user.email },
+      select: {
+        id: true,
+        authUserId: true,
+        email: true,
+      },
+    });
+  }
+
   return {
     ok: true,
     user: appUser,
   };
-}
+});

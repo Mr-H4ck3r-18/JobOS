@@ -2,15 +2,19 @@ import { JobStatus, JobSource, Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { JobsTable } from "@/features/jobs/components/jobs-table";
 import { JobFilters } from "@/features/jobs/components/job-filters";
+import { getCurrentAppUser } from "@/lib/auth/current-user";
+import { redirect } from "next/navigation";
 
 export async function JobsContent({ 
-  userId,
-  searchParams 
+  searchParamsPromise 
 }: { 
-  userId: string;
-  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+  searchParamsPromise: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
-  const params = await searchParams;
+  const currentUser = await getCurrentAppUser();
+  if (!currentUser.ok) redirect("/login");
+  const userId = currentUser.user.id;
+
+  const params = await searchParamsPromise;
   const query = typeof params.q === "string" ? params.q : undefined;
   const statusFilter = typeof params.status === "string" ? params.status as JobStatus : undefined;
   const sourceFilter = typeof params.source === "string" ? params.source as JobSource : undefined;

@@ -1,17 +1,19 @@
 import { Suspense } from "react";
 import { Bot, FileText } from "lucide-react";
 import Link from "next/link";
+import { Metadata } from "next";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { getCurrentAppUser } from "@/lib/auth/current-user";
 import { DashboardContent } from "./dashboard-content";
 import { DashboardSkeleton } from "./dashboard-skeleton";
 
-export default async function DashboardPage() {
-  const currentUser = await getCurrentAppUser();
-  if (!currentUser.ok) return null;
+export const metadata: Metadata = {
+  title: "Dashboard | JobOS",
+  description: "AI-powered career operating system",
+};
 
+export default function DashboardPage() {
   return (
     <main className="space-y-6">
       <section className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
@@ -46,7 +48,7 @@ export default async function DashboardPage() {
       </section>
 
       <Suspense fallback={<DashboardSkeleton />}>
-        <DashboardContent userId={currentUser.user.id} />
+        <DashboardContent />
       </Suspense>
     </main>
   );

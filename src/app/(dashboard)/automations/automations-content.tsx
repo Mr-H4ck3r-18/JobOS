@@ -1,7 +1,13 @@
 import { prisma } from "@/lib/prisma";
 import { AutomationsTable } from "@/features/automations/components/automations-table";
+import { getCurrentAppUser } from "@/lib/auth/current-user";
+import { redirect } from "next/navigation";
 
-export async function AutomationsContent({ userId }: { userId: string }) {
+export async function AutomationsContent() {
+  const currentUser = await getCurrentAppUser();
+  if (!currentUser.ok) redirect("/login");
+  const userId = currentUser.user.id;
+
   const runs = await prisma.automationRun.findMany({
     where: { userId },
     select: {
