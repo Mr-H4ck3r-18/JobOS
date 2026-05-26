@@ -6,7 +6,7 @@ type MetricCardProps = {
   label: string;
   value: string;
   detail: string;
-  trend: string;
+  trend?: string | null;
   icon: LucideIcon;
 };
 
@@ -18,9 +18,11 @@ export function MetricCard({ label, value, detail, trend, icon: Icon }: MetricCa
           <span className="flex h-8 w-8 items-center justify-center rounded-md bg-secondary text-muted-foreground">
             <Icon className="h-4 w-4" />
           </span>
-          <span className="rounded-md bg-accent/12 px-2 py-1 font-mono text-xs text-accent">
-            {trend}
-          </span>
+          {trend && (
+            <span className="rounded-md bg-accent/12 px-2 py-1 font-mono text-xs text-accent">
+              {trend}
+            </span>
+          )}
         </div>
         <div className="mt-4">
           <p className="text-sm text-muted-foreground">{label}</p>

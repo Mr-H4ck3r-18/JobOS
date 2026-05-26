@@ -20,6 +20,7 @@ interface AutomationsTableProps {
     source: string | null;
     status: AutomationStatus;
     startedAt: Date | null;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     output: any;
     error: string | null;
   }[];

@@ -3,13 +3,16 @@ import { Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 
+import Link from "next/link";
+
 type EmptyStateProps = {
   title: string;
   description: string;
   actionLabel: string;
+  actionHref?: string;
 };
 
-export function EmptyState({ title, description, actionLabel }: EmptyStateProps) {
+export function EmptyState({ title, description, actionLabel, actionHref }: EmptyStateProps) {
   return (
     <Card>
       <CardContent className="flex min-h-[420px] flex-col items-center justify-center p-8 text-center">
@@ -18,7 +21,14 @@ export function EmptyState({ title, description, actionLabel }: EmptyStateProps)
         </span>
         <h1 className="text-xl font-semibold text-foreground">{title}</h1>
         <p className="mt-2 max-w-xl text-sm leading-6 text-muted-foreground">{description}</p>
-        <Button className="mt-6">{actionLabel}</Button>
+        {actionHref ? (
+          <Button asChild className="mt-6">
+            {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+            <Link href={actionHref as any}>{actionLabel}</Link>
+          </Button>
+        ) : (
+          <Button className="mt-6">{actionLabel}</Button>
+        )}
       </CardContent>
     </Card>
   );
