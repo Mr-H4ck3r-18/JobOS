@@ -1,0 +1,240 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+}
+
+enum ResumeStatus {
+  MASTER
+  TAILORED
+  RECRUITER_SPECIFIC
+  ARCHIVED
+}
+
+enum JobSource {
+  GREENHOUSE
+  LEVER
+  YC_JOBS
+  WELLFOUND
+  REMOTE_OK
+  COMPANY_SITE
+  MANUAL
+}
+
+enum JobStatus {
+  DISCOVERED
+  MATCHED
+  SAVED
+  HIDDEN
+  EXPIRED
+}
+
+enum ApplicationStatus {
+  DRAFT
+  NEEDS_REVIEW
+  APPROVED
+  APPLIED
+  INTERVIEWING
+  OFFER
+  REJECTED
+  WITHDRAWN
+}
+
+enum AutomationStatus {
+  QUEUED
+  RUNNING
+  SUCCEEDED
+  FAILED
+  CANCELLED
+}
+
+enum RecruiterMessageDirection {
+  INBOUND
+  OUTBOUND
+}
+
+enum ActivityType {
+  RESUME_UPLOADED
+  RESUME_ARCHIVED
+  JOB_INGESTED
+  JOB_MATCHED
+  RESUME_TAILORED
+  APPLICATION_UPDATED
+  AUTOMATION_RUN
+  RECRUITER_MESSAGE
+  SETTINGS_UPDATED
+}
+
+model User {
+  id                 String             @id @default(cuid())
+  authUserId         String             @unique
+  email              String             @unique
+  fullName           String?
+  targetRoles        String[]           @default([])
+  targetLocations    String[]           @default([])
+  preferredSources   JobSource[]        @default([])
+  minMatchScore      Int                @default(70)
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+  resumes            Resume[]
+  jobs               Job[]
+  jobMatches         JobMatch[]
+  applications       Application[]
+  automationRuns     AutomationRun[]
+  recruiterMessages  RecruiterMessage[]
+  activityLogs       ActivityLog[]
+
+  @@map("users")
+}
+
+model Resume {
+  id              String      @id @default(cuid())
+  userId          String
+  parentResumeId  String?
+  title           String
+  status          ResumeStatus @default(MASTER)
+  storagePath     String?
+  originalFileName String?
+  contentType     String?
+  parsedText      String?
+  parseError      String?
+  tailoredContent String?
+  notes           String?
+  tags            String[]     @default([])
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+  user            User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  parentResume    Resume?      @relation("TailoredResumeVersions", fields: [parentResumeId], references: [id], onDelete: SetNull)
+  tailoredVersions Resume[]    @relation("TailoredResumeVersions")
+  applications    Application[]
+
+  @@index([userId, status])
+  @@map("resumes")
+}
+
+model Job {
+  id              String        @id @default(cuid())
+  userId          String
+  source          JobSource
+  sourceJobId     String?
+  company         String
+  title           String
+  location        String?
+  url             String
+  description     String
+  requirements    String?
+  salaryMin       Int?
+  salaryMax       Int?
+  currency        String?
+  status          JobStatus     @default(DISCOVERED)
+  postedAt        DateTime?
+  firstSeenAt     DateTime      @default(now())
+  lastSeenAt      DateTime      @default(now())
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  matches         JobMatch[]
+  applications    Application[]
+
+  @@unique([userId, url])
+  @@index([userId, company, title])
+  @@index([userId, status])
+  @@map("jobs")
+}
+
+model JobMatch {
+  id             String   @id @default(cuid())
+  userId         String
+  jobId          String
+  resumeId       String
+  score          Int
+  explanation    String
+  strongSkills   String[] @default([])
+  missingSkills  String[] @default([])
+  rawSignals     Json?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  job            Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  @@unique([jobId, resumeId])
+  @@index([userId, score])
+  @@map("job_matches")
+}
+
+model Application {
+  id                String            @id @default(cuid())
+  userId            String
+  jobId             String
+  resumeId          String?
+  status            ApplicationStatus @default(DRAFT)
+  approvalRequired  Boolean           @default(true)
+  approvedAt        DateTime?
+  submittedAt       DateTime?
+  nextFollowUpAt    DateTime?
+  notes             String?
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+  user              User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  job               Job               @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  resume            Resume?           @relation(fields: [resumeId], references: [id], onDelete: SetNull)
+  recruiterMessages RecruiterMessage[]
+
+  @@index([userId, status])
+  @@index([jobId])
+  @@map("applications")
+}
+
+model AutomationRun {
+  id          String           @id @default(cuid())
+  userId      String
+  name        String
+  source      JobSource?
+  status      AutomationStatus @default(QUEUED)
+  startedAt   DateTime?
+  endedAt     DateTime?
+  input       Json?
+  output      Json?
+  error       String?
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  user        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, status])
+  @@index([userId, createdAt])
+  @@map("automation_runs")
+}
+
+model RecruiterMessage {
+  id            String                    @id @default(cuid())
+  userId        String
+  applicationId String?
+  direction     RecruiterMessageDirection
+  subject       String?
+  body          String
+  sentAt        DateTime?
+  receivedAt    DateTime?
+  createdAt     DateTime                  @default(now())
+  updatedAt     DateTime                  @updatedAt
+  user          User                      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  application   Application?              @relation(fields: [applicationId], references: [id], onDelete: SetNull)
+
+  @@index([userId, direction])
+  @@map("recruiter_messages")
+}
+
+model ActivityLog {
+  id        String       @id @default(cuid())
+  userId    String
+  type      ActivityType
+  message   String
+  metadata  Json?
+  createdAt DateTime     @default(now())
+  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@map("activity_logs")
+}
